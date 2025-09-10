@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Shared.Models;
 using Shared.Models.AuthUser;
+using Shared.Models.StockSales;
 
 namespace Shared.Data
 {
@@ -71,9 +71,6 @@ namespace Shared.Data
                       .ValueGeneratedOnAdd();
                 entity.Property(e => e.TotalAmount)
                       .HasColumnType("decimal(18,2)");
-
-                // ❌ removido relacionamento com Items
-                // entity.HasMany(e => e.Items) ...
             });
         }
 
@@ -86,7 +83,6 @@ namespace Shared.Data
                       .HasColumnType("decimal(18,2)");
                 entity.Ignore(e => e.TotalPrice); // Não mapeia TotalPrice
 
-                // ❌ removido o WithMany(o => o.Items)
                 entity.HasOne(e => e.Order)
                       .WithMany() // relação 1:N sem coleção em Order
                       .HasForeignKey(e => e.OrderId);
@@ -108,7 +104,6 @@ namespace Shared.Data
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             await ProcessStockChanges();
-            // ❌ removido ProcessOrdersBeforeSave (não faz sentido sem Items)
             return await base.SaveChangesAsync(cancellationToken);
         }
 

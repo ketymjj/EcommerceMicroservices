@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models; // 👈 necessário para Swagger Security
+using Microsoft.OpenApi.Models;
 using Shared.Messaging.Interfaces;
 using Shared.Messaging.Clients;
 using Shared.Security.Services;
@@ -10,6 +10,7 @@ using System.Text;
 using Shared.Data;
 using Microsoft.AspNetCore.Identity;
 using Shared.Models.AuthUser;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,22 +40,14 @@ builder.Services.AddSingleton<IRabbitMqClient>(sp =>
 });
 
 // JWT
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT Key ausente!");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new Exception("JWT Issuer ausente!");
+var jwtExpiry = int.Parse(builder.Configuration["Jwt:ExpiryMinutes"] ?? throw new Exception("JWT Expiry ausente!"));
+
 builder.Services.AddSingleton<IJwtTokenService>(sp =>
 {
-    var key = builder.Configuration["Jwt:Key"]!;
-    var issuer = builder.Configuration["Jwt:Issuer"]!;
-    var expiry = int.Parse(builder.Configuration["Jwt:ExpiryMinutes"]!);
-    return new JwtTokenGenerator(key, issuer, expiry);
+    return new JwtTokenGenerator(jwtKey, jwtIssuer, jwtExpiry);
 });
-
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtExpiry = builder.Configuration["Jwt:ExpiryMinutes"];
-
-if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtExpiry))
-{
-    throw new Exception("Configuração JWT ausente. Verifique appsettings.json");
-}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -69,19 +62,29 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtIssuer,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 
 builder.Services.AddAuthorization();
 
+// 🔹 CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// 🔐 Configuração Swagger com suporte a JWT
+// 🔐 Swagger com JWT
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -90,7 +93,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // Define o esquema de segurança JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -101,7 +103,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Digite 'Bearer {seu token JWT}'"
     });
 
-    // Aplica a segurança para todos os endpoints
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -120,15 +121,33 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Permitir arquivos estáticos
+app.UseStaticFiles(); // Servirá arquivos de wwwroot por padrão
+
+// Se você quiser acessar imagens via /images/... mesmo fora de wwwroot:
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "images")),
+    RequestPath = "/images"
+});
+
+// Middleware
 app.UseHttpsRedirection();
+
+// 🔹 Ativa CORS
+app.UseCors("AllowAngular");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();

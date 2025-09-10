@@ -1,7 +1,6 @@
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\appsettings.Development.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\appsettings.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.staticwebassets.endpoints.json
-C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.exe
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.deps.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.runtimeconfig.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.dll
@@ -153,6 +152,7 @@ C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockSe
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.csproj.CoreCompileInputs.cache
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.MvcApplicationPartsAssemblyInfo.cs
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.MvcApplicationPartsAssemblyInfo.cache
+C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.sourcelink.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -167,3 +167,4 @@ C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\refint\
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.pdb
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\StockService.genruntimeconfig.cache
 C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\obj\Debug\net9.0\ref\StockService.dll
+C:\ProjetosEmpresas\EcommerceMicroservices\stockservice\bin\Debug\net9.0\StockService.staticwebassets.runtime.json

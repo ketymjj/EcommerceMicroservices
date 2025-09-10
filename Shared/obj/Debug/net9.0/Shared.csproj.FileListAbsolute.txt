@@ -7,6 +7,7 @@ C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.Genera
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.AssemblyInfoInputs.cache
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.AssemblyInfo.cs
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.csproj.CoreCompileInputs.cache
+C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.sourcelink.json
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.dll
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\refint\Shared.dll
 C:\ProjetosEmpresas\EcommerceMicroservices\Shared\obj\Debug\net9.0\Shared.pdb

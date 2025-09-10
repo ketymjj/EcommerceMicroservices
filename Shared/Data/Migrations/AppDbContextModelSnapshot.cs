@@ -50,7 +50,7 @@ namespace Shared.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Shared.Models.Order", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,7 +77,7 @@ namespace Shared.Data.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("Shared.Models.OrderItem", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -107,7 +107,7 @@ namespace Shared.Data.Migrations
                     b.ToTable("OrderItems");
                 });
 
-            modelBuilder.Entity("Shared.Models.Product", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -119,6 +119,11 @@ namespace Shared.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -145,7 +150,7 @@ namespace Shared.Data.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Shared.Models.StockHistory", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.StockHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -176,15 +181,15 @@ namespace Shared.Data.Migrations
                     b.ToTable("StockHistories");
                 });
 
-            modelBuilder.Entity("Shared.Models.OrderItem", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.OrderItem", b =>
                 {
-                    b.HasOne("Shared.Models.Order", "Order")
+                    b.HasOne("Shared.Models.StockSales.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Shared.Models.Product", "Product")
+                    b.HasOne("Shared.Models.StockSales.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -195,9 +200,9 @@ namespace Shared.Data.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("Shared.Models.StockHistory", b =>
+            modelBuilder.Entity("Shared.Models.StockSales.StockHistory", b =>
                 {
-                    b.HasOne("Shared.Models.Product", "Product")
+                    b.HasOne("Shared.Models.StockSales.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)

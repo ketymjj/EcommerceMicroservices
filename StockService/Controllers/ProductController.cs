@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Shared.Models;
 using System.Text.Json;
 using Shared.Messaging.Interfaces;
 using Shared.Data;
 using System.Security.Claims;
 using Shared.Security.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Shared.Models.StockSales;
+using StockService.ModelDto;
 
 namespace StockService.Controllers
 {
@@ -61,70 +62,110 @@ namespace StockService.Controllers
         }
 
         [HttpPost]
-        [Authorize]
-        public async Task<ActionResult<Product>> PostProduct([FromBody] Product product)
-        {
-            try
-            {
-                // 🔑 Validação do token
-                var principal = ValidateRequestToken();
-                if (principal == null)
-                    return Unauthorized("Token inválido ou não informado");
-                //
-                if (!ModelState.IsValid) return BadRequest(ModelState);
+       [Authorize]
+       public async Task<ActionResult<Product>> PostProduct([FromForm] ProductCreateDto dto)
+       {
+           try
+           {
+               var principal = ValidateRequestToken();
+               if (principal == null)
+                   return Unauthorized("Token inválido ou não informado");
+       
+               if (!ModelState.IsValid) return BadRequest(ModelState);
+       
+               // Salvar imagem no servidor
+               string? imagePath = null;
+               if (dto.Image != null && dto.Image.Length > 0)
+               {
+                   var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                   if (!Directory.Exists(uploadsFolder))
+                       Directory.CreateDirectory(uploadsFolder);
+       
+                   var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
+                   var filePath = Path.Combine(uploadsFolder, fileName);
+       
+                   using (var stream = new FileStream(filePath, FileMode.Create))
+                   {
+                       await dto.Image.CopyToAsync(stream);
+                   }
+       
+                   imagePath = "/images/" + fileName; // URL relativa
+               }
+       
+               var product = new Product
+               {
+                   Name = dto.Name,
+                   Description = dto.Description,
+                   Price = dto.Price,
+                   StockQuantity = dto.StockQuantity,
+                   ImageUrl = imagePath // precisa ter essa coluna na tabela Product
+               };
+       
+               _context.Products.Add(product);
+               await _context.SaveChangesAsync();
+       
+               if (_rabbitMqClient != null)
+                   await PublishProductEvent("product.created", product);
+       
+               var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+               _logger.LogInformation($"Produto {product.Id} criado pelo usuário {userId}");
+       
+               return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+           }
+           catch (Exception ex)
+           {
+               _logger.LogError(ex, "Erro ao criar produto");
+               return StatusCode(500, "Erro interno ao processar a requisição");
+           }
+       }
 
-                _context.Products.Add(product);
-                await _context.SaveChangesAsync();
-
-                if (_rabbitMqClient != null)
-                    await PublishProductEvent("product.created", product);
-
-                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                _logger.LogInformation($"Produto {product.Id} criado pelo usuário {userId}");
-
-                return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao criar produto");
-                return StatusCode(500, "Erro interno ao processar a requisição");
-            }
-        }
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<IActionResult> PutProduct(int id, [FromBody] Product product)
+        public async Task<IActionResult> PutProduct(int id, [FromForm] ProductCreateDto dto)
         {
             try
             {
-                // // 🔑 Validação do token
                 var principal = ValidateRequestToken();
-
                 if (principal == null)
                     return Unauthorized("Token inválido ou não informado");
-                //
-                if (id != product.Id) return BadRequest("ID do produto não corresponde");
-                if (!ModelState.IsValid) return BadRequest(ModelState);
-
+        
                 var existingProduct = await _context.Products.FindAsync(id);
                 if (existingProduct == null) return NotFound();
+        
+                // Atualizar dados
+                existingProduct.Name = dto.Name;
+                existingProduct.Price = dto.Price;
+                existingProduct.StockQuantity = dto.StockQuantity;
+                existingProduct.UpdatedAt = DateTime.UtcNow;
+        
+                // Se enviou nova imagem, sobrescreve
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
 
-                var oldStock = existingProduct.StockQuantity;
-                _context.Entry(existingProduct).CurrentValues.SetValues(product);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await dto.Image.CopyToAsync(stream);
+                    }
+
+                    existingProduct.ImageUrl = "/images/" + fileName;
+                }
+        
                 await _context.SaveChangesAsync();
-
-                if (_rabbitMqClient != null && oldStock != product.StockQuantity)
-                    await PublishProductEvent("stock.updated", product);
-
+        
+                if (_rabbitMqClient != null)
+                    await PublishProductEvent("product.updated", existingProduct);
+        
                 var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 _logger.LogInformation($"Produto {id} atualizado pelo usuário {userId}");
-
+        
                 return NoContent();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogError(ex, $"Conflito ao atualizar produto {id}");
-                return StatusCode(409, "Conflito de concorrência detectado");
             }
             catch (Exception ex)
             {
@@ -132,6 +173,53 @@ namespace StockService.Controllers
                 return StatusCode(500, "Erro interno ao processar a requisição");
             }
         }
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            try
+            {
+                var principal = ValidateRequestToken();
+                if (principal == null)
+                    return Unauthorized("Token inválido ou não informado");
+        
+                var existingProduct = await _context.Products.FindAsync(id);
+                if (existingProduct == null) return NotFound();
+        
+                // Se tiver imagem salva, apaga do disco também
+                if (!string.IsNullOrEmpty(existingProduct.ImageUrl))
+                {
+                    var imagePath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        existingProduct.ImageUrl.TrimStart('/')
+                    );
+        
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                    }
+                }
+        
+                _context.Products.Remove(existingProduct);
+                await _context.SaveChangesAsync();
+        
+                if (_rabbitMqClient != null)
+                    await PublishProductEvent("product.deleted", existingProduct);
+        
+                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation($"Produto {id} deletado pelo usuário {userId}");
+        
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao deletar produto {id}");
+                return StatusCode(500, "Erro interno ao processar a requisição");
+            }
+        }
+
 
         private async Task PublishProductEvent(string eventType, Product product)
         {
