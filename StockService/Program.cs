@@ -11,6 +11,8 @@ using Shared.Data;
 using Microsoft.AspNetCore.Identity;
 using Shared.Models.AuthUser;
 using Microsoft.Extensions.FileProviders;
+using Shared.Interface;
+using StockService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +24,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IPasswordHasher<UserModel>, PasswordHasher<UserModel>>();
+
 
 // RabbitMQ
 var rabbitConfig = builder.Configuration.GetSection("RabbitMQ");
