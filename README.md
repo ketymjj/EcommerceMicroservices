@@ -48,12 +48,45 @@ Para aplicar migrações durante o desenvolvimento:
 dotnet ef database update
 ```
 
-## Diagrama de Arquitetura
+## # Diagrama de Arquitetura
 
 ```mermaid
-graph TD
-    A[StockService] --> B[(SQL Server)]
-    A --> C[[RabbitMQ]]
-    C --> D[SalesService]
-    C --> E[NotificationService]
+graph TB
+    subgraph "API Gateway"
+        Gateway[API Gateway / Load Balancer]
+    end
+
+    subgraph "Microsserviços"
+        Sales[SalesService]
+        Stock[StockService]
+        Notification[NotificationService]
+    end
+
+    subgraph "Camada Compartilhada"
+        Shared[Shared Library<br/>ModelDto | Models | Extensions<br/>Interface | Messaging | Security | Data]
+    end
+
+    subgraph "Mensageria"
+        Rabbit[RabbitMQ]
+    end
+
+    subgraph "Banco de Dados"
+        SQL1[(SQL Server<br/>SalesDB)]
+        SQL2[(SQL Server<br/>StockDB)]
+    end
+
+    Gateway --> Sales
+    Gateway --> Stock
+    Gateway --> Notification
+
+    Sales --> Shared
+    Stock --> Shared
+    Notification --> Shared
+
+    Sales -->|publica mensagem| Rabbit
+    Rabbit -->|consome| Stock
+    Rabbit -->|consome| Notification
+
+    Sales --> SQL1
+    Stock --> SQL2
 ```
