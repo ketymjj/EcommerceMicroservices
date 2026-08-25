@@ -48,7 +48,7 @@ Para aplicar migrações durante o desenvolvimento:
 dotnet ef database update
 ```
 
-## # Diagrama de Arquitetura
+## Diagrama de Arquitetura
 
 ```mermaid
 graph TB
