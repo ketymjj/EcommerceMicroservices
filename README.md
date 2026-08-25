@@ -63,7 +63,7 @@ graph TB
     end
 
     subgraph "Camada Compartilhada"
-        Shared[Shared Library<br/>ModelDto | Models | Extensions<br/>Interface | Messaging | Security | Data]
+        Shared["Shared Library <br> ModelDto | Models | Extensions <br> Interface | Messaging | Security | Data"]
     end
 
     subgraph "Mensageria"
@@ -71,8 +71,8 @@ graph TB
     end
 
     subgraph "Banco de Dados"
-        SQL1[(SQL Server<br/>SalesDB)]
-        SQL2[(SQL Server<br/>StockDB)]
+        SQL1[("SQL Server <br> SalesDB")]
+        SQL2[("SQL Server <br> StockDB")]
     end
 
     Gateway --> Sales
